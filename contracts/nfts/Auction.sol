@@ -144,7 +144,8 @@ contract CybertimeNFTAuction {
         uint256 _expiry
     ) public onlyDev {
         Auction storage auction = auctions[_asset];
-        require(auctions[_asset] == address(0));
+        // check if the asset is already added
+        require(auction.basePrice == 0);
         auction.originalQuantity = _quantity;
         auction.basePrice = _basePrice;
         auction.minBidAmt = _minBidAmt;
