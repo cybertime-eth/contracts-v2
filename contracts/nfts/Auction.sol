@@ -115,7 +115,7 @@ contract CybertimeNFTAuction {
             uint256 tokenId = TestNFT(_asset).mint(msg.sender);
             emit Claim(_asset, msg.sender, tokenId);
         } else if (
-            auction.totalBidders.sub(auction.bidderPosition[msg.sender]) >=
+            auction.totalBidders.sub(auction.bidderPosition[msg.sender]) <=
             auction.originalQuantity
         ) {
             uint256 tokenId = TestNFT(_asset).mint(msg.sender);
