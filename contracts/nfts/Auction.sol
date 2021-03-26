@@ -22,7 +22,6 @@ contract CybertimeNFTAuction {
         uint256 incrementRate; // rate at which the big should increment
         uint256 startTime; // time at which the auction will start
         uint256 expiry; // expiry of the auction
-        uint256 lastBid; // store the current bid
         uint256 highestBidAmt; // store the higest bid amount
         uint256 totalBidders; // total number of bids
         uint256 totalBidAmt; // total bid amount
@@ -31,7 +30,7 @@ contract CybertimeNFTAuction {
     }
 
     // store the mapping of added NFTs for the sale
-    mapping(address => Auction) auctions;
+    mapping(address => Auction) public auctions;
 
     event Bid(
         address indexed asset,
@@ -64,9 +63,8 @@ contract CybertimeNFTAuction {
         Auction storage auction = auctions[_asset];
 
         require(
-            auction.lastBid < _amt && // _amt should be > than last bidded price
-                _amt.sub(auction.lastBid) >= auction.minBidAmt && // proposed price should be >= to minimum bid price
-                _amt.sub(auction.lastBid).mod(auction.incrementRate) == 0, // proposed bid is multiple of minimum bid amount
+            auction.minBidAmt < _amt && // _amt should be > than last bidded price
+                _amt.sub(auction.minBidAmt).mod(auction.incrementRate) == 0, // proposed bid is multiple of minimum bid amount
             "auction: invalid amount"
         );
 
@@ -79,7 +77,7 @@ contract CybertimeNFTAuction {
         }
 
         // update last bid amount
-        auction.lastBid = _amt;
+        auction.minBidAmt = _amt;
 
         // update the totalBidAmt
         auction.totalBidAmt = auction.totalBidAmt.add(_amt);
