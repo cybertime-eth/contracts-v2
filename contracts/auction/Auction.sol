@@ -153,7 +153,7 @@ contract CybertimeNFTAuction {
 
     function changeIncrementRate(address _asset, uint256 _incrementRate)
         public
-        onlyDev()
+        onlyDev
     {
         Auction storage auction = auctions[_asset];
         auction.incrementRate = _incrementRate;
@@ -165,10 +165,13 @@ contract CybertimeNFTAuction {
         distribution = _newDistribution;
     }
 
-    function distributeSales() public onlyDev {
+    function distributeSales(address _asset) public onlyDev {
+        Auction storage auction = auctions[_asset];
+        require(auction.expiry <= block.timestamp, "auction: the auction isn't expired");
         // distribute funds to developer w.r.t to already set distribution
-        NFTL.transfer(dev, NFTL.balanceOf(address(this)).mul(distribution).div(1000000));
+        uint devShare = auction.highestBidAmt.mul(distribution).div(1000000);
+        NFTL.transfer(dev, devShare);
         // distribute remaining balance to the team
-        NFTL.transfer(team, NFTL.balanceOf(address(this)));
+        NFTL.transfer(team, auction.highestBidAmt.sub(devShare));
     }
 }
