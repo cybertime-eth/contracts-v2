@@ -7,7 +7,9 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 contract CyberTimeFinanceToken is ERC20 {
     address public farmingContract;
     address public owner;
-    IERC20 internal oldCTF;
+    
+    IERC20 private oldCTF;
+    uint256 private deployedAt;
 
     constructor(
         address _owner,
@@ -18,6 +20,7 @@ contract CyberTimeFinanceToken is ERC20 {
         owner = _owner;
         oldCTF = IERC20(_oldCTFAddress);
         _mint(_initialReceiver, _initialMintAmt);
+        deployedAt = block.timestamp;
     }
 
     // mint tokens
@@ -27,6 +30,7 @@ contract CyberTimeFinanceToken is ERC20 {
             "CTFToken: You are not authorised to mint"
         );
         _mint(_to, _amt);
+        require(totalSupply() <= 86000 * (10 ** 18));
     }
 
     function addFarmingContract(address _farmingContractAddr) public {
@@ -38,13 +42,14 @@ contract CyberTimeFinanceToken is ERC20 {
         farmingContract = _farmingContractAddr;
     }
 
+    // migrate from v1 to v2
     function migrate() public {
         uint256 oldBalance = oldCTF.balanceOf(msg.sender);
+        require(deployedAt + 31536000 <= block.timestamp, "CTFToken: Migration period is over");
         // check if user has enough CTF tokens with old contract
         require(oldBalance > 0, "CTFToken: Not eligible to migrate");
         // burn the old CTF tokens
         oldCTF.transferFrom(msg.sender, address(0), oldBalance);
-
         _mint(msg.sender, oldBalance);
     }
 }

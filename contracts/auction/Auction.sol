@@ -15,6 +15,8 @@ contract CybertimeNFTAuction {
 
     IERC20 NFTL; // add ERC20 interface to NFTL address
 
+    uint256 burnRate; // Burn NFTL on each sale
+
     struct Auction {
         uint256 originalQuantity; // quantity of the NFT's to give
         uint256 basePrice; // base price of the asset
@@ -59,7 +61,7 @@ contract CybertimeNFTAuction {
      * @param _asset Address of the auction asset
      * @param _amt Amount users want to bid
      */
-    function bid(address _asset, uint256 _amt) public {
+    function bid(address _asset, uint256 _id, uint256 _amt) public {
         Auction storage auction = auctions[_asset];
 
         require(
@@ -165,13 +167,34 @@ contract CybertimeNFTAuction {
         distribution = _newDistribution;
     }
 
+    // for 50% set value to be 50000
+    function changeBurnRate(uint256 _newBurnRate) public onlyDev {
+        burnRate = _newBurnRate;
+    }
+
     function distributeSales(address _asset) public onlyDev {
         Auction storage auction = auctions[_asset];
-        require(auction.expiry <= block.timestamp, "auction: the auction isn't expired");
+        require(
+            auction.expiry <= block.timestamp,
+            "auction: the auction isn't expired"
+        );
+
+        uint256 saleAmount;
+
+        // burn tokens
+        if (burnRate > 0) {
+            uint256 burnAmount =
+                auction.highestBidAmt.mul(burnRate).div(1000000);
+            NFTL.transfer(address(0), burnAmount);
+            saleAmount = auction.highestBidAmt.sub(burnAmount);
+        } else {
+            saleAmount = auction.highestBidAmt;
+        }
+
         // distribute funds to developer w.r.t to already set distribution
-        uint devShare = auction.highestBidAmt.mul(distribution).div(1000000);
+        uint256 devShare = saleAmount.mul(distribution).div(1000000);
         NFTL.transfer(dev, devShare);
         // distribute remaining balance to the team
-        NFTL.transfer(team, auction.highestBidAmt.sub(devShare));
+        NFTL.transfer(team, saleAmount.sub(devShare));
     }
 }

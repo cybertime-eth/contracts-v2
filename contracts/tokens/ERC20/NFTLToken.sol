@@ -9,16 +9,19 @@ contract NFTLToken is ERC20 {
     address public owner;
 
     IERC20 internal oldNFTL;
+    uint256 private deployedAt;
 
     constructor(
         address _owner,
         address _initialReceiver,
         uint256 _initialMintAmt,
-        address _oldNFTLAddress
+        address _oldNFTLAddress,
+        uint256 _deployedAt
     ) ERC20("NFTL Token", "NFTL") {
         owner = _owner;
         oldNFTL = IERC20(_oldNFTLAddress);
         _mint(_initialReceiver, _initialMintAmt);
+        deployedAt = block.timestamp;
     }
 
     // mint tokens
@@ -28,6 +31,7 @@ contract NFTLToken is ERC20 {
             "CTFToken: You are not authorised to mint"
         );
         _mint(_to, _amt);
+        require(totalSupply() <= 86000000 * (10 ** 18));
     }
 
     function addFarmingContract(address _farmingContractAddr) public {
@@ -39,8 +43,10 @@ contract NFTLToken is ERC20 {
         farmingContract = _farmingContractAddr;
     }
 
+    // migrate from v1 to v2
     function migrate() public {
         uint256 oldBalance = oldNFTL.balanceOf(msg.sender);
+        require(deployedAt + 31536000 <= block.timestamp, "CTFToken: Migration period is over");
         // check if user has enough CTF tokens with old contract
         require(oldBalance > 0, "NFTLToken: Not eligible to migrate");
         // burn the old CTF tokens
