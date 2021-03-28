@@ -1,0 +1,26 @@
+{
+    "name": "CyberTime Evangelist",
+    "description": "The future is here. Cyborgs are among us. Or maybe we are the cyborgs?",
+    "max_quantity": "20",
+    "image": "https://ipfs.io/ipfs/QmQkJY9P1BJZWr4mQwxHD7Uy7CPhMVvvTWs8YMpvN69pZb",
+    "animation_url": "URI",
+    "external_url": "URI",
+    "attributes": [
+        {
+            "trait_type": "Author",
+            "value": "CyberTime"
+        },
+        {
+            "trait_type": "Rarity",
+            "value": "Legendary"
+        },
+        {
+            "trait_type": "ID",
+            "value": "NFT-01"
+        },
+        {
+            "trait_type": "Series",
+            "value": "Evangelist"
+        }
+    ]
+}

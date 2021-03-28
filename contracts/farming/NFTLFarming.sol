@@ -7,8 +7,7 @@ import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/EnumerableSet.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "../tokens/NFTLToken.sol";
-
+import "../tokens/ERC20/NFTLToken.sol";
 
 contract NFTLFarm is Ownable {
     using SafeMath for uint256;
@@ -88,23 +87,26 @@ contract NFTLFarm is Ownable {
         teamRewardsReceiver = _teamRewardsReceiver;
     }
 
-    modifier validatePool(uint256 _pid) { 
-        require ( _pid < poolInfo.length , "farm: pool do not exists");
-        _; 
+    modifier validatePool(uint256 _pid) {
+        require(_pid < poolInfo.length, "farm: pool do not exists");
+        _;
     }
 
     function poolLength() external view returns (uint256) {
         return poolInfo.length;
     }
 
+    modifier onlyDev() {
+        require(msg.sender == devaddr, "farm: wrong developer");
+        _;
+    }
+
     // Add a new token to the pool. Can only be called by the owner.
     // XXX DO NOT add the same token more than once. Rewards will be messed up if you do.
-    function checkPoolDuplicate ( 
-        IERC20 _token 
-    ) public { 
-        uint256 length = poolInfo.length ;
-        for (uint256 pid = 0; pid<length; ++pid) {
-            require(poolInfo[pid].token!= _token , "add: existing pool?"); 
+    function checkPoolDuplicate(IERC20 _token) public {
+        uint256 length = poolInfo.length;
+        for (uint256 pid = 0; pid < length; ++pid) {
+            require(poolInfo[pid].token != _token, "add: existing pool?");
         }
     }
 
@@ -112,7 +114,7 @@ contract NFTLFarm is Ownable {
         uint256 _allocPoint,
         IERC20 _token,
         bool _withUpdate
-    ) public onlyOwner {
+    ) public onlyDev {
         if (_withUpdate) {
             massUpdatePools();
         }
@@ -135,7 +137,7 @@ contract NFTLFarm is Ownable {
         uint256 _pid,
         uint256 _allocPoint,
         bool _withUpdate
-    ) public onlyOwner {
+    ) public onlyDev {
         if (_withUpdate) {
             massUpdatePools();
         }
@@ -144,7 +146,6 @@ contract NFTLFarm is Ownable {
         );
         poolInfo[_pid].allocPoint = _allocPoint;
     }
-
 
     // Return reward multiplier over the given _from to _to block.
     function getMultiplier(uint256 _from, uint256 _to)
@@ -260,7 +261,7 @@ contract NFTLFarm is Ownable {
             user.amount.mul(pool.accNFTLPerShare).div(1e12).sub(
                 user.rewardDebt
             );
-        
+
         user.amount = user.amount.sub(_amount);
         user.rewardDebt = user.amount.mul(pool.accNFTLPerShare).div(1e12);
 
@@ -305,19 +306,17 @@ contract NFTLFarm is Ownable {
         }
     }
 
-    function changeNFTLPerBlock(uint256 _newRate) public {
+    function changeNFTLPerBlock(uint256 _newRate) public onlyDev {
         require(msg.sender == devaddr, "dev: wut?");
         nftlPerBlock = _newRate;
     }
 
     // Update dev address by the previous dev.
-    function dev(address _devaddr) public {
-        require(msg.sender == devaddr, "dev: wut?");
+    function dev(address _devaddr) public onlyDev {
         devaddr = _devaddr;
     }
 
-    function updateTeamShare(uint256 _newShare) public {
-        require(msg.sender == devaddr, "dev: wut?");
+    function updateTeamShare(uint256 _newShare) public onlyDev {
         require(_newShare < 0 && _newShare > 100, "Wrong Values");
         teamShare = _newShare;
     }

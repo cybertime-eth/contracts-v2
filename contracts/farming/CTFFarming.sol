@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/EnumerableSet.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "../tokens/CTFToken.sol";
+import "../tokens/ERC20/CTFToken.sol";
 
 contract CTFFarm is Ownable {
     using SafeMath for uint256;
@@ -54,7 +54,7 @@ contract CTFFarm is Ownable {
     // Total allocation poitns. Must be the sum of all allocation points in all pools.
     uint256 public totalAllocPoint = 0;
     // The block number when CTF mining starts.
-    
+
     uint256 public startBlock;
     event Deposit(address indexed user, uint256 indexed pid, uint256 amount);
     event Withdraw(address indexed user, uint256 indexed pid, uint256 amount);
@@ -80,10 +80,14 @@ contract CTFFarm is Ownable {
         startBlock = _startBlock;
     }
 
+    modifier validatePool(uint256 _pid) {
+        require(_pid < poolInfo.length, "farm: pool do not exists");
+        _;
+    }
 
-    modifier validatePool(uint256 _pid) { 
-        require ( _pid < poolInfo.length , "farm: pool do not exists");
-        _; 
+    modifier onlyDev() {
+        require(msg.sender == devaddr, "farm: wrong developer");
+        _;
     }
 
     function poolLength() external view returns (uint256) {
@@ -93,12 +97,10 @@ contract CTFFarm is Ownable {
     // Add a new lp to the pool. Can only be called by the owner.
     // XXX DO NOT add the same LP token more than once. Rewards will be messed up if you do.
 
-    function checkPoolDuplicate ( 
-        IERC20 _lpToken 
-    ) public { 
-        uint256 length = poolInfo.length ;
-        for (uint256 pid = 0; pid < length ; ++pid) {
-            require (poolInfo[pid].lpToken!=_lpToken , "add: existing pool?"); 
+    function checkPoolDuplicate(IERC20 _lpToken) public {
+        uint256 length = poolInfo.length;
+        for (uint256 pid = 0; pid < length; ++pid) {
+            require(poolInfo[pid].lpToken != _lpToken, "add: existing pool?");
         }
     }
 
@@ -106,7 +108,7 @@ contract CTFFarm is Ownable {
         uint256 _allocPoint,
         IERC20 _lpToken,
         bool _withUpdate
-    ) public onlyOwner {
+    ) public onlyDev {
         if (_withUpdate) {
             massUpdatePools();
         }
@@ -124,13 +126,12 @@ contract CTFFarm is Ownable {
         );
     }
 
-
     // Update the given pool's CTF allocation point. Can only be called by the owner.
     function set(
         uint256 _pid,
         uint256 _allocPoint,
         bool _withUpdate
-    ) public onlyOwner {
+    ) public onlyDev {
         if (_withUpdate) {
             massUpdatePools();
         }
@@ -139,7 +140,6 @@ contract CTFFarm is Ownable {
         );
         poolInfo[_pid].allocPoint = _allocPoint;
     }
-
 
     // Return reward multiplier over the given _from to _to block.
     function getMultiplier(uint256 _from, uint256 _to)
@@ -211,8 +211,8 @@ contract CTFFarm is Ownable {
             ctfReward.mul(1e12).div(lpSupply)
         );
         pool.lastRewardBlock = block.number;
-        
-        uint fees = ctfReward.mul(10).div(100);
+
+        uint256 fees = ctfReward.mul(10).div(100);
 
         ctf.mint(devaddr, fees);
         ctf.mint(address(this), ctfReward.sub(fees));
@@ -249,15 +249,13 @@ contract CTFFarm is Ownable {
     }
 
     // Withdraw LP tokens from CTFFarm.
-    function withdraw(uint256 _pid, uint256 _amount) public validatePool(_pid){
+    function withdraw(uint256 _pid, uint256 _amount) public validatePool(_pid) {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];
         require(user.amount >= _amount, "withdraw: not good");
         updatePool(_pid);
         uint256 pending =
-            user.amount.mul(pool.accCTFPerShare).div(1e12).sub(
-                user.rewardDebt
-            );
+            user.amount.mul(pool.accCTFPerShare).div(1e12).sub(user.rewardDebt);
 
         user.amount = user.amount.sub(_amount);
         user.rewardDebt = user.amount.mul(pool.accCTFPerShare).div(1e12);
@@ -275,9 +273,7 @@ contract CTFFarm is Ownable {
         require(user.amount > 0, "No Rewards to claim");
         updatePool(_pid);
         uint256 pending =
-            user.amount.mul(pool.accCTFPerShare).div(1e12).sub(
-                user.rewardDebt
-            );
+            user.amount.mul(pool.accCTFPerShare).div(1e12).sub(user.rewardDebt);
         user.rewardDebt = user.amount.mul(pool.accCTFPerShare).div(1e12);
         safeCTFTransfer(msg.sender, pending);
     }
@@ -303,14 +299,12 @@ contract CTFFarm is Ownable {
         }
     }
 
-    function changeCTFPerBlock(uint256 _newRate) public {
-        require(msg.sender == devaddr, "dev: wut?");
+    function changeCTFPerBlock(uint256 _newRate) public onlyDev {
         ctfPerBlock = _newRate;
     }
 
     // Update dev address by the previous dev.
-    function dev(address _devaddr) public {
-        require(msg.sender == devaddr, "dev: wut?");
+    function dev(address _devaddr) public onlyDev {
         devaddr = _devaddr;
     }
 }

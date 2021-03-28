@@ -3,7 +3,7 @@ pragma solidity 0.7.5;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "./TestNFT.sol";
+import "../test/TestNFT.sol";
 
 contract CybertimeNFTAuction {
     using SafeMath for uint256; //add safeMath
