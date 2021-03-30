@@ -18,13 +18,10 @@ async function main() {
     "https://ipfs.io/ipfs/QmVyuCVXFQW6gcTy8oRAAtENv7hTuf7h2KRmiGBkL86szH";
   const rare =
     "https://ipfs.io/ipfs/Qmf2DSvm516odESDDFEzgVYjm57sGMXe8iwtTG8mzZ9564";
-  const recipient = "0x9876d5A1601D2E796e8Ed5151527609938070d9f";
+  const dev = "0xE26953DA6DD88E8Bb7778549d73fd06f9A4AB189";
 
   const evangelistContract = await CyberTimeEvangelist.deploy(
-    legendary,
-    epic,
-    rare,
-    recipient
+    dev
   );
 
   console.log("🎉 Contract Deployed", evangelistContract.address);

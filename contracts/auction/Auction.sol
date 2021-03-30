@@ -3,7 +3,7 @@ pragma solidity 0.7.5;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "../test/TestNFT.sol";
+import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 
 contract CybertimeNFTAuction {
     using SafeMath for uint256; //add safeMath
@@ -19,7 +19,7 @@ contract CybertimeNFTAuction {
 
     struct Auction {
         uint256 originalQuantity; // quantity of the NFT's to give
-        uint256 basePrice; // base price of the asset
+        // uint256 basePrice; // base price of the asset
         uint256 minBidAmt; // minimum amount at which auction should increase
         uint256 incrementRate; // rate at which the big should increment
         uint256 startTime; // time at which the auction will start
@@ -46,6 +46,10 @@ contract CybertimeNFTAuction {
         uint256 indexed tokenId
     );
 
+    event NewAuction(address indexed asset);
+
+    event IncrementRate(address indexed asset, uint256 indexed incrementRate);
+
     modifier onlyDev() {
         require(msg.sender == dev, "auction: wrong developer");
         _;
@@ -61,9 +65,14 @@ contract CybertimeNFTAuction {
      * @param _asset Address of the auction asset
      * @param _amt Amount users want to bid
      */
-    function bid(address _asset, uint256 _id, uint256 _amt) public {
+    function bid(address _asset, uint256 _amt) public {
         Auction storage auction = auctions[_asset];
 
+        require(_amt > 0, "auction: amount should be greater than zero");
+        require(
+            auction.expiry > block.timestamp,
+            "Auction: Auction is not over yet"
+        );
         require(
             auction.minBidAmt < _amt && // _amt should be > than last bidded price
                 _amt.sub(auction.minBidAmt).mod(auction.incrementRate) == 0, // proposed bid is multiple of minimum bid amount
@@ -104,6 +113,8 @@ contract CybertimeNFTAuction {
      * @asset _asset on which the user wants to claim the price
      */
     function claim(address _asset) public {
+        require(_asset != address(0), "auction: invalid asset");
+
         Auction storage auction = auctions[_asset];
 
         require(
@@ -112,14 +123,24 @@ contract CybertimeNFTAuction {
         );
 
         if (auction.totalBidders.sub(auction.bidderPosition[msg.sender]) == 0) {
-            uint256 tokenId = TestNFT(_asset).mint(msg.sender);
+            uint256 tokenId = auction.totalBidders.sub(auction.bidderPosition[msg.sender]);
+            IERC721(_asset).transferFrom(
+                address(this),
+                msg.sender,
+                auction.totalBidders.sub(auction.bidderPosition[msg.sender])
+            );
             emit Claim(_asset, msg.sender, tokenId);
         } else if (
             auction.totalBidders.sub(auction.bidderPosition[msg.sender]) <=
             auction.originalQuantity
         ) {
-            uint256 tokenId = TestNFT(_asset).mint(msg.sender);
-            emit Claim(_asset, msg.sender, tokenId);
+            uint256 tokenId = auction.totalBidders.sub(auction.bidderPosition[msg.sender]);
+            IERC721(_asset).transferFrom(
+                address(this),
+                msg.sender,
+                tokenId
+            );
+            emit Claim(_asset, msg.sender, auction.totalBidders.sub(auction.bidderPosition[msg.sender]));
         } else {
             NFTL.transfer(msg.sender, auction.bids[msg.sender]);
         }
@@ -138,41 +159,46 @@ contract CybertimeNFTAuction {
     function add(
         address _asset,
         uint256 _quantity,
-        uint256 _basePrice,
+        // uint256 _basePrice,
         uint256 _minBidAmt,
         uint256 _incrementRate,
         uint256 _expiry
-    ) public onlyDev {
+    ) external onlyDev {
+        require(_minBidAmt > 0, "auction: should be greater than zero");
         Auction storage auction = auctions[_asset];
         // check if the asset is already added
-        require(auction.basePrice == 0);
+        require(auction.minBidAmt == 0);
         auction.originalQuantity = _quantity;
-        auction.basePrice = _basePrice;
+        // auction.basePrice = _basePrice;
         auction.minBidAmt = _minBidAmt;
         auction.incrementRate = _incrementRate;
         auction.expiry = _expiry;
+        emit NewAuction(_asset);
     }
 
     function changeIncrementRate(address _asset, uint256 _incrementRate)
-        public
+        external
         onlyDev
     {
+        require(_asset != address(0) && _incrementRate > 0, "auction: invalid inputs");
         Auction storage auction = auctions[_asset];
         auction.incrementRate = _incrementRate;
+        emit IncrementRate(_asset, _incrementRate);
     }
 
     // set distribution percentage to DAO, in decimal of 4
     // eg. for 50% set value to be 50000
-    function changeSalesDistribution(uint256 _newDistribution) public onlyDev {
+    function changeSalesDistribution(uint256 _newDistribution) external onlyDev {
         distribution = _newDistribution;
     }
 
     // for 50% set value to be 50000
-    function changeBurnRate(uint256 _newBurnRate) public onlyDev {
+    function changeBurnRate(uint256 _newBurnRate) external onlyDev {
         burnRate = _newBurnRate;
     }
 
-    function distributeSales(address _asset) public onlyDev {
+    function distributeSales(address _asset) external onlyDev {
+        require(_asset != address(0), "auction: wrong address");
         Auction storage auction = auctions[_asset];
         require(
             auction.expiry <= block.timestamp,
