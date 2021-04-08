@@ -69,6 +69,8 @@ contract NFTLFarm is Ownable {
         uint256 amount
     );
 
+    event SetDev(address indexed user, address indexed _devaddr);
+
     constructor(
         NFTLToken _nftl,
         address _devaddr,
@@ -141,6 +143,12 @@ contract NFTLFarm is Ownable {
         if (_withUpdate) {
             massUpdatePools();
         }
+        if (poolInfo[_pid].allocPoint != _allocPoint) {
+            totalAllocPoint = totalAllocPoint
+                .sub(poolInfo[_pid].allocPoint)
+                .add(_allocPoint);
+            poolInfo[_pid].allocPoint = _allocPoint;
+        }
         totalAllocPoint = totalAllocPoint.sub(poolInfo[_pid].allocPoint).add(
             _allocPoint
         );
@@ -153,6 +161,7 @@ contract NFTLFarm is Ownable {
         view
         returns (uint256)
     {
+        require(_from <= _to, "_from must be less than or equal to _to");
         if (_to <= bonusEndBlock) {
             return _to.sub(_from).mul(BONUS_MULTIPLIER);
         } else if (_from >= bonusEndBlock) {
@@ -189,7 +198,7 @@ contract NFTLFarm is Ownable {
         return user.amount.mul(accNFTLPerShare).div(1e12).sub(user.rewardDebt);
     }
 
-    // Update reward vairables for all pools. Be careful of gas spending!
+    // Update reward variables for all pools. Be careful of gas spending!
     function massUpdatePools() public {
         uint256 length = poolInfo.length;
         for (uint256 pid = 0; pid < length; ++pid) {
@@ -237,7 +246,9 @@ contract NFTLFarm is Ownable {
                 user.amount.mul(pool.accNFTLPerShare).div(1e12).sub(
                     user.rewardDebt
                 );
-            safeNFTLTransfer(msg.sender, pending);
+            if (user.pending > 0) {
+                safeNFTLTransfer(msg.sender, pending);
+            }
         }
         user.amount = user.amount.add(_amount);
         user.rewardDebt = user.amount.mul(pool.accNFTLPerShare).div(1e12);
@@ -262,12 +273,16 @@ contract NFTLFarm is Ownable {
                 user.rewardDebt
             );
 
-        user.amount = user.amount.sub(_amount);
         user.rewardDebt = user.amount.mul(pool.accNFTLPerShare).div(1e12);
 
-        safeNFTLTransfer(msg.sender, pending);
+        if (user.pending > 0) {
+            safeNFTLTransfer(msg.sender, pending);
+        }
 
-        pool.token.safeTransfer(address(msg.sender), _amount);
+        if (_amount > 0) {
+            user.amount = user.amount.sub(_amount);
+            pool.token.safeTransfer(address(msg.sender), _amount);
+        }
         emit Withdraw(msg.sender, _pid, _amount);
     }
 
@@ -282,7 +297,9 @@ contract NFTLFarm is Ownable {
                 user.rewardDebt
             );
         user.rewardDebt = user.amount.mul(pool.accNFTLPerShare).div(1e12);
-        safeNFTLTransfer(msg.sender, pending);
+        if (user.pending > 0) {
+            safeNFTLTransfer(msg.sender, pending);
+        }
     }
 
     // Withdraw without caring about rewards. EMERGENCY ONLY.
@@ -314,6 +331,7 @@ contract NFTLFarm is Ownable {
     // Update dev address by the previous dev.
     function dev(address _devaddr) public onlyDev {
         devaddr = _devaddr;
+        emit SetDev(msg.sender, _devaddr);
     }
 
     function updateTeamShare(uint256 _newShare) public onlyDev {

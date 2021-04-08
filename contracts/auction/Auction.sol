@@ -13,7 +13,7 @@ contract CybertimeNFTAuction {
 
     uint256 distribution; // distribution percentage between the DAO and the team
 
-    IERC20 NFTL; // add ERC20 interface to NFTL address
+    IERC20 immutable public NFTL; // add ERC20 interface to NFTL address
 
     uint256 burnRate; // Burn NFTL on each sale
 
@@ -50,6 +50,11 @@ contract CybertimeNFTAuction {
 
     event IncrementRate(address indexed asset, uint256 indexed incrementRate);
 
+    event ChangeSalesDistribution(uint256 indexed newDistributionRate);
+
+    event ChangeBurnRate(uint256 indexed newBurnRate);
+
+
     modifier onlyDev() {
         require(msg.sender == dev, "auction: wrong developer");
         _;
@@ -80,11 +85,12 @@ contract CybertimeNFTAuction {
         );
 
         // update the amount user has staked
-        auction.bids[msg.sender] = auction.bids[msg.sender].add(_amt);
+        uint256 newBidderAmt = auction.bids[msg.sender].add(_amt);
+        auction.bids[msg.sender] = newBidderAmt;
 
         // update the highest bid amount
-        if (auction.highestBidAmt < _amt.add(auction.bids[msg.sender])) {
-            auction.highestBidAmt = _amt.add(auction.bids[msg.sender]);
+        if (auction.highestBidAmt < _amt.add(newBidderAmt)) {
+            auction.highestBidAmt = _amt.add(newBidderAmt]);
         }
 
         // update last bid amount
@@ -93,7 +99,7 @@ contract CybertimeNFTAuction {
         // update the totalBidAmt
         auction.totalBidAmt = auction.totalBidAmt.add(_amt);
 
-        if (auction.bids[msg.sender] != 0) {
+        if (newBidderAmt != 0) {
             auction.totalBidders = auction.totalBidders.add(1);
         }
 
@@ -164,7 +170,9 @@ contract CybertimeNFTAuction {
         uint256 _incrementRate,
         uint256 _expiry
     ) external onlyDev {
-        require(_minBidAmt > 0, "auction: should be greater than zero");
+        require(_quantity > 0, "auction: _quantity should be greater than zero");
+        require(_expiry > block.timestamp, "auction: _expiry should be a future block");
+        require(_minBidAmt > 0, "auction: _minBidAmt should be greater than zero");
         Auction storage auction = auctions[_asset];
         // check if the asset is already added
         require(auction.minBidAmt == 0);
@@ -190,11 +198,13 @@ contract CybertimeNFTAuction {
     // eg. for 50% set value to be 50000
     function changeSalesDistribution(uint256 _newDistribution) external onlyDev {
         distribution = _newDistribution;
+        emit ChangeSalesDistribution(_newDistribution);
     }
 
     // for 50% set value to be 50000
     function changeBurnRate(uint256 _newBurnRate) external onlyDev {
         burnRate = _newBurnRate;
+        emit ChangeBurnRate(_newBurnRate);
     }
 
     function distributeSales(address _asset) external onlyDev {

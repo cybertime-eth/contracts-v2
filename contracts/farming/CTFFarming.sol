@@ -63,6 +63,7 @@ contract CTFFarm is Ownable {
         uint256 indexed pid,
         uint256 amount
     );
+    event SetDev(address indexed user, address indexed _devaddr);
 
     constructor(
         CyberTimeFinanceToken _ctf,
@@ -135,6 +136,12 @@ contract CTFFarm is Ownable {
         if (_withUpdate) {
             massUpdatePools();
         }
+        if (poolInfo[_pid].allocPoint != _allocPoint) {
+            totalAllocPoint = totalAllocPoint
+                .sub(poolInfo[_pid].allocPoint)
+                .add(_allocPoint);
+            poolInfo[_pid].allocPoint = _allocPoint;
+        }
         totalAllocPoint = totalAllocPoint.sub(poolInfo[_pid].allocPoint).add(
             _allocPoint
         );
@@ -147,6 +154,7 @@ contract CTFFarm is Ownable {
         view
         returns (uint256)
     {
+        require(_from <= _to, "_from must be less than or equal to _to");
         if (_to <= bonusEndBlock) {
             return _to.sub(_from).mul(BONUS_MULTIPLIER);
         } else if (_from >= bonusEndBlock) {
@@ -183,7 +191,7 @@ contract CTFFarm is Ownable {
         return user.amount.mul(accCTFPerShare).div(1e12).sub(user.rewardDebt);
     }
 
-    // Update reward vairables for all pools. Be careful of gas spending!
+    // Update reward variables for all pools. Be careful of gas spending!
     function massUpdatePools() public {
         uint256 length = poolInfo.length;
         for (uint256 pid = 0; pid < length; ++pid) {
@@ -224,11 +232,13 @@ contract CTFFarm is Ownable {
         UserInfo storage user = userInfo[_pid][msg.sender];
         updatePool(_pid);
         if (user.amount > 0) {
-            uint256 pending =
-                user.amount.mul(pool.accCTFPerShare).div(1e12).sub(
-                    user.rewardDebt
-                );
-            safeCTFTransfer(msg.sender, pending);
+            if (user.pending > 0) {
+                uint256 pending =
+                    user.amount.mul(pool.accCTFPerShare).div(1e12).sub(
+                        user.rewardDebt
+                    );
+                safeCTFTransfer(msg.sender, pending);
+            }
         }
 
         // amount minus 2% LP fees
@@ -244,7 +254,9 @@ contract CTFFarm is Ownable {
         );
 
         // send fees in the form of LP tokens to feeReceiver addr
-        pool.lpToken.transfer(lpFeeReceiver, fees);
+        if (fees > 0) {
+            pool.lpToken.transfer(lpFeeReceiver, fees);
+        }
         emit Deposit(msg.sender, _pid, _amount.sub(fees));
     }
 
@@ -260,7 +272,9 @@ contract CTFFarm is Ownable {
         user.amount = user.amount.sub(_amount);
         user.rewardDebt = user.amount.mul(pool.accCTFPerShare).div(1e12);
 
-        safeCTFTransfer(msg.sender, pending);
+        if (user.pending > 0) {
+            safeCTFTransfer(msg.sender, pending);
+        }
 
         pool.lpToken.safeTransfer(address(msg.sender), _amount);
         emit Withdraw(msg.sender, _pid, _amount);
@@ -275,7 +289,9 @@ contract CTFFarm is Ownable {
         uint256 pending =
             user.amount.mul(pool.accCTFPerShare).div(1e12).sub(user.rewardDebt);
         user.rewardDebt = user.amount.mul(pool.accCTFPerShare).div(1e12);
-        safeCTFTransfer(msg.sender, pending);
+        if (user.pending > 0) {
+            safeCTFTransfer(msg.sender, pending);
+        }
     }
 
     // Withdraw without caring about rewards. EMERGENCY ONLY.
@@ -306,5 +322,6 @@ contract CTFFarm is Ownable {
     // Update dev address by the previous dev.
     function dev(address _devaddr) public onlyDev {
         devaddr = _devaddr;
+        emit SetDev(msg.sender, _devaddr);
     }
 }
