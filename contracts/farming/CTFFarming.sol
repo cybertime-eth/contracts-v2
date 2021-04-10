@@ -231,12 +231,10 @@ contract CTFFarm is Ownable {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];
         updatePool(_pid);
+        uint256 pending =
+            user.amount.mul(pool.accCTFPerShare).div(1e12).sub(user.rewardDebt);
         if (user.amount > 0) {
-            if (user.pending > 0) {
-                uint256 pending =
-                    user.amount.mul(pool.accCTFPerShare).div(1e12).sub(
-                        user.rewardDebt
-                    );
+            if (pending > 0) {
                 safeCTFTransfer(msg.sender, pending);
             }
         }
@@ -272,7 +270,7 @@ contract CTFFarm is Ownable {
         user.amount = user.amount.sub(_amount);
         user.rewardDebt = user.amount.mul(pool.accCTFPerShare).div(1e12);
 
-        if (user.pending > 0) {
+        if (pending > 0) {
             safeCTFTransfer(msg.sender, pending);
         }
 
@@ -289,7 +287,7 @@ contract CTFFarm is Ownable {
         uint256 pending =
             user.amount.mul(pool.accCTFPerShare).div(1e12).sub(user.rewardDebt);
         user.rewardDebt = user.amount.mul(pool.accCTFPerShare).div(1e12);
-        if (user.pending > 0) {
+        if (pending > 0) {
             safeCTFTransfer(msg.sender, pending);
         }
     }

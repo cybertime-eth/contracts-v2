@@ -20,8 +20,7 @@ contract NFTLToken is ERC20 {
         address _owner,
         address _initialReceiver,
         uint256 _initialMintAmt,
-        address _oldNFTLAddress,
-        uint256 _deployedAt
+        address _oldNFTLAddress
     ) ERC20("NFTL Token", "NFTL") {
         owner = _owner;
         oldNFTL = IERC20(_oldNFTLAddress);

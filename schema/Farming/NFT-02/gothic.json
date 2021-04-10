@@ -1,0 +1,26 @@
+{
+    "name": "Gothic [Rare]",
+    "description": "Time flows irreversibly. It takes different forms for everyone. For some, time is too slow, for others — time is money, and some only live in the past.",
+    "max_quantity": "150",
+    "image": "https://ipfs.io/ipfs/QmcQyVWj8MTSEcHu49QnJBdhYkqwNw1yPojyCoiDypvXVs",
+    "animation_url": "URI",
+    "external_url": "URI",
+    "attributes": [
+        {
+            "trait_type": "Author",
+            "value": "CyberTime"
+        },
+        {
+            "trait_type": "Rarity",
+            "value": "Rare"
+        },
+        {
+            "trait_type": "ID",
+            "value": "NFT-02"
+        },
+        {
+            "trait_type": "Collection",
+            "value": "Farmers"
+        }
+    ]
+}

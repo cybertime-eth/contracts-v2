@@ -1,0 +1,26 @@
+{
+    "name": "Infinity [Legendary]",
+    "description": "Time flows irreversibly. It takes different forms for everyone. For some, time is too slow, for others — time is money, and some only live in the past.",
+    "max_quantity": "20",
+    "image": "https://ipfs.io/ipfs/QmYs16Yf4eR2cvXshUToAY76jp6HqrVA5dLoeJtmZYV7u1",
+    "animation_url": "URI",
+    "external_url": "URI",
+    "attributes": [
+        {
+            "trait_type": "Author",
+            "value": "CyberTime"
+        },
+        {
+            "trait_type": "Rarity",
+            "value": "Legendary"
+        },
+        {
+            "trait_type": "ID",
+            "value": "NFT-02"
+        },
+        {
+            "trait_type": "Collection",
+            "value": "Farmers"
+        }
+    ]
+}

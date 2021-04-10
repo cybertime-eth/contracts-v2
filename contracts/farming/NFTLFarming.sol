@@ -246,7 +246,7 @@ contract NFTLFarm is Ownable {
                 user.amount.mul(pool.accNFTLPerShare).div(1e12).sub(
                     user.rewardDebt
                 );
-            if (user.pending > 0) {
+            if (pending > 0) {
                 safeNFTLTransfer(msg.sender, pending);
             }
         }
@@ -275,7 +275,7 @@ contract NFTLFarm is Ownable {
 
         user.rewardDebt = user.amount.mul(pool.accNFTLPerShare).div(1e12);
 
-        if (user.pending > 0) {
+        if (pending > 0) {
             safeNFTLTransfer(msg.sender, pending);
         }
 
@@ -297,7 +297,7 @@ contract NFTLFarm is Ownable {
                 user.rewardDebt
             );
         user.rewardDebt = user.amount.mul(pool.accNFTLPerShare).div(1e12);
-        if (user.pending > 0) {
+        if (pending > 0) {
             safeNFTLTransfer(msg.sender, pending);
         }
     }
