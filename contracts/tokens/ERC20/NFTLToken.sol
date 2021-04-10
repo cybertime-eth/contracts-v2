@@ -52,13 +52,13 @@ contract NFTLToken is ERC20 {
     function migrate() public {
         uint256 oldBalance = oldNFTL.balanceOf(msg.sender);
         require(
-            deployedAt + 31536000 <= block.timestamp,
+            deployedAt + 365 days >= block.timestamp,
             "CTFToken: Migration period is over"
         );
         // check if user has enough CTF tokens with old contract
         require(oldBalance > 0, "NFTLToken: Not eligible to migrate");
         // burn the old CTF tokens
-        oldNFTL.transferFrom(msg.sender, address(0), oldBalance);
+        oldNFTL.transferFrom(msg.sender, 0x000000000000000000000000000000000000dEaD, oldBalance);
         // mint new tokens to the user
         _mint(msg.sender, oldBalance);
     }

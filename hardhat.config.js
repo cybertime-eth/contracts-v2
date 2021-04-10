@@ -30,10 +30,10 @@ module.exports = {
       gasPrice: 50000000000,
       // gasLimit: 10000000
     },
-    // mainnet: {
-    //   url: "https://bsc-dataseed.binance.org/",
-    //   accounts: [process.env.PRIVATE_KEY],
-    // }
+    mainnet: {
+      url: "https://bsc-dataseed.binance.org/",
+      accounts: [process.env.PRIVATE_KEY],
+    }
   },
 
   etherscan: {

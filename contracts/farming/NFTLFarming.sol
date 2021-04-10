@@ -334,8 +334,9 @@ contract NFTLFarm is Ownable {
         emit SetDev(msg.sender, _devaddr);
     }
 
+    // 1000000 is 100%
     function updateTeamShare(uint256 _newShare) public onlyDev {
-        require(_newShare < 0 && _newShare > 100, "Wrong Values");
+        require(_newShare > 0 && _newShare < 1000000, "Wrong Values");
         teamShare = _newShare;
     }
 }
