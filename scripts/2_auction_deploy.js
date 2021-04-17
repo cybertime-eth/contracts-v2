@@ -13,14 +13,16 @@ async function main() {
   // Step 3: Add auction address to NFTLeague
   // Step 4: Add auction
 
+  const network = "testnet"
+
   const NFTL = await ethers.getContractFactory("TestERC20");
   const NFTLeague = await ethers.getContractFactory("NFTLeague");
   const AuctionContract = await ethers.getContractFactory(
     "CybertimeNFTAuction"
   );
 
-  const owner = "0x9876d5A1601D2E796e8Ed5151527609938070d9f";
-  const team = "0x9876d5A1601D2E796e8Ed5151527609938070d9f"
+  const owner = "0x8Ac52d9B443b736fd3CC6b32E3900A3EEEd8F7a4";
+  const team = "0x8Ac52d9B443b736fd3CC6b32E3900A3EEEd8F7a4"
 
   const nftl = await NFTL.deploy("testNFTL", "tNFTL", owner);
   const nftLeague = await NFTLeague.deploy();
@@ -37,6 +39,14 @@ async function main() {
     NFTL: nftl.address,
     auction: auction.address,
     nftLeague: nftLeague.address
+  })
+
+  console.log("💻 Commands to Verify Contracts")
+
+  console.log({
+    NFTL: `npx hardhat verify --network ${network} ${nftl.address} "testNFTL" "tNFTL" ${owner}`,
+    auction: `npx hardhat verify --network ${network} ${auction.address} "${nftLeague.address}" "${owner}" "${team}`,
+    nftLeague: `npx hardhat verify --network ${network} ${nftLeague.address}`
   })
   
   // npx hardhat verify --network testnet 0xa4F56B3fe3F532D62De6E29e11436e9E230D0f62 "testNFTL" "tNFTL" "0x9876d5A1601D2E796e8Ed5151527609938070d9f"

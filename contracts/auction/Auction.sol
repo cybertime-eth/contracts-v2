@@ -36,7 +36,6 @@ contract CybertimeNFTAuction {
         uint256 incrementRate; // rate at which the big should increment
         uint256 startTime; // time at which the auction will start
         uint256 expiry; // expiry of the auction
-        uint256 highestBidAmt; // store the higest bid amount
         uint256 totalBidders; // total number of bids
         uint256 totalBidAmt; // total bid amount
         uint256 burnRate; // by default zero, can be enabled later
@@ -91,6 +90,7 @@ contract CybertimeNFTAuction {
     function bid(uint256 _auctionId, uint256 _amt) public {
         Auction storage auction = auctions[_auctionId];
 
+        require(auction.startTime < block.timestamp, "auction: not yet started");
         require(_amt > 0, "auction: amount should be greater than zero");
         require(
             auction.expiry > block.timestamp,
@@ -101,19 +101,23 @@ contract CybertimeNFTAuction {
                 _amt.sub(auction.minBidAmt).mod(auction.incrementRate) == 0, // proposed bid is multiple of minimum bid amount
             "auction: invalid amount"
         );
+        require(auction.minBidAmt < _amt, "big amount is too less");
 
+        // return the previous amount
         if (auction.bids[msg.sender] > 0) {
             auction.auctionToken.transfer(msg.sender, auction.bids[msg.sender]);
+
         }
 
         // update the amount user has staked
         uint256 newBidderAmt = _amt;
         auction.bids[msg.sender] = newBidderAmt;
 
-        // update the highest bid amount
-        if (auction.highestBidAmt < _amt.add(newBidderAmt)) {
-            auction.highestBidAmt = _amt.add(newBidderAmt);
-        }
+        // auction.highestBidAmt = _amt.add(newBidderAmt);
+        // // update the highest bid amount
+        // if (auction.highestBidAmt < _amt.add(newBidderAmt)) {
+        //     auction.highestBidAmt = _amt.add(newBidderAmt);
+        // }
 
         // update last bid amount
         auction.minBidAmt = _amt;
@@ -121,13 +125,11 @@ contract CybertimeNFTAuction {
         // update the totalBidAmt
         auction.totalBidAmt = auction.totalBidAmt.add(_amt);
 
-        if (newBidderAmt != 0) {
-            auction.totalBidders = auction.totalBidders.add(1);
-        }
+        // update number of bidders
+        auction.totalBidders = auction.totalBidders.add(1);
 
         // store index to distribute the reward
-        auction.bidderPosition[msg.sender] = auction.bidderPosition[msg.sender]
-            .add(auction.totalBidders);
+        auction.bidderPosition[msg.sender] = auction.totalBidders;
 
         // transfer the tokens to contract
         auction.auctionToken.transferFrom(msg.sender, address(this), _amt);
@@ -226,6 +228,7 @@ contract CybertimeNFTAuction {
         uint256 _minBidAmt,
         uint256 _incrementRate,
         uint256 _expiry,
+        uint256 _startTime,
         IERC20 _auctionToken
     ) external onlyDev {
         require(
@@ -250,6 +253,7 @@ contract CybertimeNFTAuction {
         auction.incrementRate = _incrementRate;
         auction.expiry = _expiry;
         auction.auctionToken = _auctionToken;
+        auction.startTime = _startTime;
         emit NewAuction(_auctionId);
     }
 
@@ -295,11 +299,11 @@ contract CybertimeNFTAuction {
         // burn tokens
         if (auction.burnRate > 0) {
             uint256 burnAmount =
-                auction.highestBidAmt.mul(auction.burnRate).div(1000000);
+                auction.minBidAmt.mul(auction.burnRate).div(1000000);
             auction.auctionToken.transfer(address(0), burnAmount);
-            saleAmount = auction.highestBidAmt.sub(burnAmount);
+            saleAmount = auction.minBidAmt.sub(burnAmount);
         } else {
-            saleAmount = auction.highestBidAmt;
+            saleAmount = auction.minBidAmt;
         }
 
         // distribute funds to developer w.r.t to already set distribution
