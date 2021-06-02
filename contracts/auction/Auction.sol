@@ -156,13 +156,8 @@ contract CybertimeNFTAuction {
             "Auction: Auction is not over yet"
         );
 
-        if (auction.totalBidders.sub(auction.bidderPosition[msg.sender]) == 0) {
-            _tokenIds.increment();
-            uint256 tokenId = _tokenIds.current();
-            NFT.mint(msg.sender, tokenId, auction.uri);
-            emit Claim(_auctionId, msg.sender, tokenId);
-        } else if (
-            auction.totalBidders.sub(auction.bidderPosition[msg.sender]) <=
+        if (
+            auction.totalBidders.sub(auction.bidderPosition[msg.sender]) <
             auction.originalQuantity
         ) {
             _tokenIds.increment();
@@ -172,7 +167,7 @@ contract CybertimeNFTAuction {
             emit Claim(
                 _auctionId,
                 msg.sender,
-                auction.totalBidders.sub(auction.bidderPosition[msg.sender])
+                tokenId
             );
         } else {
             auction.auctionToken.transfer(msg.sender, auction.bids[msg.sender]);

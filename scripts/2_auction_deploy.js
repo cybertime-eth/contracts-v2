@@ -15,38 +15,39 @@ async function main() {
 
   const network = "testnet"
 
-  const NFTL = await ethers.getContractFactory("TestERC20");
-  const NFTLeague = await ethers.getContractFactory("NFTLeague");
+  // const NFTL = await ethers.getContractFactory("TestERC20");
+  // const NFTLeague = await ethers.getContractFactory("NFTLeague");
   const AuctionContract = await ethers.getContractFactory(
     "CybertimeNFTAuction"
   );
 
-  const owner = "0x8Ac52d9B443b736fd3CC6b32E3900A3EEEd8F7a4";
-  const team = "0x8Ac52d9B443b736fd3CC6b32E3900A3EEEd8F7a4"
+  const owner = "0x7237900B50BaA3C366fbe0C71A450076B5AfD0D7";
+  const team = "0x8Ac52d9B443b736fd3CC6b32E3900A3EEEd8F7a4";
+  const nftlLeagueAddress = "0x757968c448ed3b8d854cbc65beef7309faa5b7e9";
 
-  const nftl = await NFTL.deploy("testNFTL", "tNFTL", owner);
-  const nftLeague = await NFTLeague.deploy();
+  // const nftl = await NFTL.deploy("testNFTL", "tNFTL", owner);
+  // const nftLeague = await NFTLeague.deploy();
   const auction = await AuctionContract.deploy(
-    nftLeague.address,
+    nftlLeagueAddress,
     owner,
     team
   );
 
-  await nftLeague.addAuction(auction.address);
+  // await nftLeague.addAuction(auction.address);
 
   console.log("🎉 Contracts Deployed")
   console.log({
-    NFTL: nftl.address,
+    // NFTL: nftl.address,
     auction: auction.address,
-    nftLeague: nftLeague.address
+    // nftLeague: nftLeague.address
   })
 
   console.log("💻 Commands to Verify Contracts")
 
   console.log({
-    NFTL: `npx hardhat verify --network ${network} ${nftl.address} "testNFTL" "tNFTL" ${owner}`,
-    auction: `npx hardhat verify --network ${network} ${auction.address} "${nftLeague.address}" "${owner}" "${team}`,
-    nftLeague: `npx hardhat verify --network ${network} ${nftLeague.address}`
+    // NFTL: `npx hardhat verify --network ${network} ${nftl.address} "testNFTL" "tNFTL" ${owner}`,
+    auction: `npx hardhat verify --network ${network} ${auction.address} "${nftlLeagueAddress}" "${owner}" "${team}`,
+    // nftLeague: `npx hardhat verify --network ${network} ${nftLeague.address}`
   })
   
   // npx hardhat verify --network testnet 0xa4F56B3fe3F532D62De6E29e11436e9E230D0f62 "testNFTL" "tNFTL" "0x9876d5A1601D2E796e8Ed5151527609938070d9f"
