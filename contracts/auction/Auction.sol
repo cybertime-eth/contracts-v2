@@ -92,10 +92,7 @@ contract CybertimeNFTAuction {
 
         require(auction.startTime < block.timestamp, "auction: not yet started");
         require(_amt > 0, "auction: amount should be greater than zero");
-        require(
-            auction.expiry > block.timestamp,
-            "Auction: Auction is not over yet"
-        );
+        require(auction.expiry > block.timestamp, "Auction: Auction is not over yet");
         require(
             auction.minBidAmt < _amt && // _amt should be > than last bidded price
                 _amt.sub(auction.minBidAmt).mod(auction.incrementRate) == 0, // proposed bid is multiple of minimum bid amount
@@ -106,13 +103,12 @@ contract CybertimeNFTAuction {
         // return the previous amount
         if (auction.bids[msg.sender] > 0) {
             auction.auctionToken.transfer(msg.sender, auction.bids[msg.sender]);
-
         }
 
         // update the amount user has staked
         uint256 newBidderAmt = _amt;
         auction.bids[msg.sender] = newBidderAmt;
-
+ 
         // auction.highestBidAmt = _amt.add(newBidderAmt);
         // // update the highest bid amount
         // if (auction.highestBidAmt < _amt.add(newBidderAmt)) {
@@ -157,13 +153,12 @@ contract CybertimeNFTAuction {
         );
 
         if (
-            auction.totalBidders.sub(auction.bidderPosition[msg.sender]) <
-            auction.originalQuantity
+            auction.totalBidders.sub(auction.bidderPosition[msg.sender]) < auction.originalQuantity
         ) {
             _tokenIds.increment();
             uint256 tokenId = _tokenIds.current();
-            NFT.mint(msg.sender, tokenId, auction.uri);
             auction.hasClaimed[msg.sender] = true;
+            NFT.mint(msg.sender, tokenId, auction.uri);
             emit Claim(
                 _auctionId,
                 msg.sender,
@@ -252,6 +247,16 @@ contract CybertimeNFTAuction {
         emit NewAuction(_auctionId);
     }
 
+    function changeStartTime(uint256 _auctionId, uint256 _startTime) public onlyDev{
+        Auction storage auction = auctions[_auctionId];
+        auction.startTime = _startTime;
+    }
+
+    function changeExpiry(uint256 _auctionId, uint256 _expiry) public onlyDev{
+        Auction storage auction = auctions[_auctionId];
+        auction.expiry = _expiry;
+    }
+
     function changeIncrementRate(uint256 _auctionId, uint256 _incrementRate)
         external
         onlyDev
@@ -306,5 +311,9 @@ contract CybertimeNFTAuction {
         auction.auctionToken.transfer(dev, devShare);
         // distribute remaining balance to the team
         auction.auctionToken.transfer(team, saleAmount.sub(devShare));
+    }
+
+    function changeDev(address _newDev) public onlyDev {
+        dev  = _newDev;
     }
 }

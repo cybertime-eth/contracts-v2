@@ -21,6 +21,11 @@ contract NFTLeague is ERC721 {
         _;
     }
 
+    modifier onlyDev() {
+        require(msg.sender == dev, "auction: wrong developer");
+        _;
+    }
+
     constructor() public ERC721("CyberTime NFT League", "NFTLeague") {
         dev = msg.sender;
     }
@@ -38,5 +43,9 @@ contract NFTLeague is ERC721 {
             "NFTLeague: Auction contract already added"
         );
         auction = _auctionAddress;
+    }
+
+    function changeDev(address _newDev) public onlyDev {
+        dev  = _newDev;
     }
 }
